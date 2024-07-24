@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
 use App\Http\Requests\PostRequest;
+use Illuminate\Support\Facades\DB;
 
 class PostController extends Controller
 {
@@ -15,6 +16,15 @@ class PostController extends Controller
         $posts = Auth::user()->posts()->orderBy('created_at', 'desc')->get();
 
         return view('posts.index', compact('posts'));
+
+        // postsテーブルからすべてのデータを取得し、変数$postsに代入する
+        $posts = DB::table('posts')->get();
+ 
+        // 変数$postsをposts/index.blade.phpファイルに渡す
+        return view('posts.index', compact('posts'));
+
+        // 特定のカラムを昇順ASCで並び替え、その順番でデータを取得する
+        DB::table('posts')->orderBy('updated_at', 'asc')->get();
     }
 
     // 詳細ページ
@@ -29,27 +39,32 @@ class PostController extends Controller
         return view('posts.create');
     }
 
-     // 作成機能
-     public function store(PostRequest $request)
-     {
-         $post = new Post();
-         $post->title = $request->input('title');
-         $post->content = $request->input('content');
-         $post->user_id = Auth::id();
-         $post->save();
- 
-         return redirect()->route('posts.index')->with('flash_message', '投稿が完了しました。');
-     }
+    // 作成機能
+    public function store(PostRequest $request)
+    {
+        $post = new Post();
+        $post->title = $request->input('title');
+        $post->content = $request->input('content');
+        $post->user_id = Auth::id();
+        $post->save();
 
-     // 編集ページ
-     public function edit(Post $post)
-     {
-         if ($post->user_id !== Auth::id()) {
-             return redirect()->route('posts.index')->with('error_message', '不正なアクセスです。');
-         }
- 
-         return view('posts.edit', compact('post'));
-     }
+        $request->validate([
+            'title' => 'required|integer|max:40|unique:posts,title',
+            'content' => 'required|max:200'
+        ]);
+
+        return redirect()->route('posts.index')->with('flash_message', '投稿が完了しました。');
+    }
+
+    // 編集ページ
+    public function edit(Post $post)
+    {
+        if ($post->user_id !== Auth::id()) {
+            return redirect()->route('posts.index')->with('error_message', '不正なアクセスです。');
+        }
+
+        return view('posts.edit', compact('post'));
+    }
 
      // 更新機能
      public function update(PostRequest $request, Post $post)
