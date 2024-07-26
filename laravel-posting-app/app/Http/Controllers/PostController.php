@@ -42,16 +42,16 @@ class PostController extends Controller
     // 作成機能
     public function store(PostRequest $request)
     {
+        $request->validate([
+            'title' => 'required|max:40',
+            'content' => 'required|max:200'
+        ]);
+
         $post = new Post();
         $post->title = $request->input('title');
         $post->content = $request->input('content');
         $post->user_id = Auth::id();
         $post->save();
-
-        $request->validate([
-            'title' => 'required|integer|max:40|unique:posts,title',
-            'content' => 'required|max:200'
-        ]);
 
         return redirect()->route('posts.index')->with('flash_message', '投稿が完了しました。');
     }
